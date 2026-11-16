@@ -1,0 +1,66 @@
+{
+  "description": "Methods, scenarios, and seeds for the required comparison. tools/set_run_config.py applies one combination to Webots; tools/simulate_navigation.py runs them offline.",
+  "seeds": [1, 2, 3, 4, 5],
+  "required_scenarios": ["nominal", "uncertain_start", "blocked_route", "kidnapped"],
+  "methods": {
+    "baseline": {
+      "description": "Supplied starter: encoder odometry + 23 provided waypoints + bounded safety turn",
+      "config": {
+        "localization": {"mode": "odometry_baseline"},
+        "controller": {"planning_mode": "provided_waypoints"}
+      }
+    },
+    "team": {
+      "description": "Team system: LiDAR Monte Carlo Localization + A* + reactive avoidance + replanning",
+      "config": {
+        "localization": {"mode": "mcl"},
+        "controller": {"planning_mode": "astar"}
+      }
+    }
+  },
+  "scenarios": {
+    "nominal": {
+      "description": "Known start region, standard noise, blocker position 1",
+      "webots_instructions": "Reset, leave the blocker at position 1, do not press any key.",
+      "config": {"localization": {"initial_belief": "gaussian"}},
+      "simulation": {"blocker": [0.0, 0.0]}
+    },
+    "uncertain_start": {
+      "description": "Initial belief is uniform over the whole HOME room with unknown heading; the true start is offset from HOME",
+      "webots_instructions": "Before pressing play, drag/rotate the robot to a different spot in the HOME (south-west) room, then reset odometry by reloading the controller. Do not press any key.",
+      "config": {
+        "localization": {
+          "initial_belief": "region",
+          "initial_region": [-3.85, -0.15, -2.85, -0.75]
+        }
+      },
+      "simulation": {"blocker": [0.0, 0.0], "start_offset": [0.45, 0.35, 0.9]}
+    },
+    "blocked_route": {
+      "description": "Blocker moves from position 1 to position 2 after the robot has planned and left HOME",
+      "webots_instructions": "Start the run, then press 2 with the 3D view focused about 20 s after the robot leaves HOME.",
+      "config": {"localization": {"initial_belief": "gaussian"}},
+      "simulation": {"blocker": [0.0, 0.0], "blocker_events": [[20.0, [-2.0, 1.3]]]}
+    },
+    "kidnapped": {
+      "description": "Supervisor moves the robot to (0.9, -2.1, pi) while it is navigating",
+      "webots_instructions": "Start the run, then press K while the robot is driving between A and B (about 150 s).",
+      "config": {"localization": {"initial_belief": "gaussian"}},
+      "simulation": {"blocker": [0.0, 0.0], "kidnap_time_s": 150.0, "kidnap_pose": [0.9, -2.1, 3.141592653589793]}
+    },
+    "blocked_corridor": {
+      "description": "Extra stress test (not a released placement): blocker moves onto the team's planned HOME->A path",
+      "webots_instructions": "Not reproducible with the Supervisor keys; offline simulation only.",
+      "config": {"localization": {"initial_belief": "gaussian"}},
+      "simulation": {"blocker": [0.0, 0.0], "blocker_events": [[15.0, [-2.3, 0.0]]]}
+    }
+  },
+  "simulation_defaults": {
+    "max_time_s": 900.0,
+    "lidar_rays": 120,
+    "lidar_noise_std_m": 0.008,
+    "wheel_radius_error_std": 0.003,
+    "track_error_std": 0.01,
+    "wheel_slip_std": 0.03
+  }
+}

@@ -1,0 +1,18 @@
+PASS
+duration_s: 391.296
+ground_truth_path_length_m: 25.366134
+average_ground_truth_speed_m_s: 0.0648259476202159
+contact_sample_fraction: 0.0
+lidar_telemetry_fraction: 1.0
+moving_command_fraction: 0.9923139820114473
+final_window_duration_s: 20.0
+final_window_path_gain_m: 1.2966149999999992
+final_window_emergency_fraction: 0.0
+maximum_active_waypoint: 4
+mission_complete_reported: True
+goals_reached_ground_truth: 4
+collision_episodes: 0
+final_home_error_m: 0.062511282061721
+position_rmse_m: 0.029708277929849022
+position_max_error_m: 0.717815
+full_mission_required: True

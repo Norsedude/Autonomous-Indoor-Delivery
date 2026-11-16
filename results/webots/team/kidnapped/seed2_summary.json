@@ -1,0 +1,32 @@
+{
+  "source": "C:\\Users\\1\\iCloudDrive\\San Jose State University\\SJSU Year 3\\Fall 2026\\CMPE 185 Auto Mobile Robots\\Project\\Autonomous-Indoor-Delivery\\results\\webots\\team\\kidnapped\\seed2.csv",
+  "duration_s": 494.976,
+  "position_rmse_m": 1.357280093023068,
+  "position_max_error_m": 4.728715,
+  "heading_rmse_rad": 1.0590152985939247,
+  "heading_max_error_rad": 3.141579,
+  "ground_truth_path_length_m": 35.896304,
+  "average_ground_truth_speed_m_s": 0.07252130204292734,
+  "contact_sample_fraction": 0.0,
+  "lidar_telemetry_fraction": 1.0,
+  "collision_episodes": 0,
+  "goals_reached": 4,
+  "mission_complete_reported": true,
+  "final_home_error_m": 0.063946465422258,
+  "samples_with_estimate": 7735,
+  "maximum_active_waypoint": 4,
+  "final_window_duration_s": 20.0,
+  "final_window_path_gain_m": 1.296286000000002,
+  "controller_state_sample_counts": {
+    "localize": 74,
+    "follow_rotate": 885,
+    "follow_drive": 6635,
+    "relocalize": 94,
+    "complete": 47
+  },
+  "safety_state_sample_counts": {
+    "localizing": 168,
+    "clear": 7520,
+    "inactive": 47
+  }
+}

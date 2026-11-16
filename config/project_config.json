@@ -1,0 +1,115 @@
+{
+  "coordinate_frame": {
+    "description": "Webots ENU and project frame share the x-y floor plane; z is up; theta is counterclockwise about +z; robot and LiDAR use FLU (+x forward, +y left, +z up)",
+    "initial_pose": [
+      -3.2,
+      -2.2,
+      0.0
+    ]
+  },
+  "robot": {
+    "model": "GCtronic e-puck2 in Webots R2025a",
+    "wheel_radius_m": 0.02,
+    "geometric_axle_length_m": 0.052,
+    "effective_track_width_m": 0.0574,
+    "body_radius_m": 0.037,
+    "max_wheel_speed_rad_s": 6.28,
+    "motor_acceleration_rad_s2": 3.0,
+    "cruise_speed_m_s": 0.09,
+    "lidar_offset_x_m": -0.0095
+  },
+  "controller": {
+    "waypoint_tolerance_m": 0.075,
+    "waypoint_slowdown_distance_m": 0.35,
+    "minimum_drive_speed_m_s": 0.025,
+    "rotate_enter_heading_error_rad": 0.24,
+    "rotate_exit_heading_error_rad": 0.055,
+    "heading_gain": 1.45,
+    "maximum_angular_speed_rad_s": 0.55,
+    "emergency_stop_distance_m": 0.1,
+    "emergency_release_distance_m": 0.18,
+    "emergency_turn_speed_rad_s": 0.75,
+    "emergency_minimum_turn_steps": 20,
+    "emergency_clear_steps": 4,
+    "avoidance_distance_m": 0.23,
+    "escape_forward_speed_m_s": 0.045,
+    "escape_forward_steps": 18,
+    "maximum_recoveries_per_waypoint": 2,
+    "display_update_steps": 4,
+    "telemetry_period_steps": 1,
+    "planning_mode": "astar"
+  },
+  "localization": {
+    "mode": "mcl",
+    "particle_count_recommendation": 300,
+    "initial_position_std_m": 0.45,
+    "initial_heading_std_rad": 0.5,
+    "initial_belief": "gaussian",
+    "initial_region": [
+      -3.85,
+      -0.15,
+      -2.85,
+      -0.75
+    ],
+    "beams_per_update": 40,
+    "effective_beams": 10.0,
+    "sigma_hit_m": 0.05,
+    "z_hit": 1.0,
+    "z_rand": 0.05,
+    "update_min_translation_m": 0.02,
+    "update_min_rotation_rad": 0.05,
+    "update_max_steps": 12,
+    "motion_noise_translation": 0.08,
+    "motion_noise_rotation": 0.08,
+    "motion_noise_rotation_per_m": 0.25,
+    "resample_ess_fraction": 0.5,
+    "lost_inlier_ratio": 0.45,
+    "lost_consecutive_updates": 4
+  },
+  "map": {
+    "metadata_file": "maps/building_map.yaml",
+    "grid_file": "maps/building_map.csv",
+    "waypoints_file": "maps/waypoints.json"
+  },
+  "evaluation": {
+    "receiver_channel": 7,
+    "position_goal_tolerance_m": 0.2,
+    "collision_debounce_s": 0.5,
+    "floor_contact_height_tolerance_m": 0.005,
+    "log_every_steps": 2
+  },
+  "planning": {
+    "resolution_m": 0.05,
+    "safety_margin_m": 0.035,
+    "preferred_clearance_m": 0.2,
+    "clearance_weight": 3.0,
+    "line_of_sight_clearance_m": 0.12,
+    "dynamic_detection_distance_m": 0.1,
+    "dynamic_max_range_m": 2.0,
+    "blocked_lookahead_m": 1.5
+  },
+  "avoidance": {
+    "stop_gap_m": 0.035,
+    "slow_gap_m": 0.16,
+    "side_margin_m": 0.025,
+    "side_gain": 4.0,
+    "turn_speed_rad_s": 0.6,
+    "replan_after_steps": 12
+  },
+  "mission": {
+    "goal_tolerance_m": 0.08,
+    "localize_turn_speed_rad_s": 0.5,
+    "localize_min_time_s": 3.0,
+    "localize_timeout_s": 60.0,
+    "replan_min_interval_s": 0.5,
+    "blocked_persist_updates": 3,
+    "jump_replan_m": 0.25,
+    "no_path_retry_s": 2.0,
+    "no_path_forget_after": 3
+  },
+  "experiment": {
+    "method": "team",
+    "scenario": "nominal",
+    "seed": 1
+  }
+}

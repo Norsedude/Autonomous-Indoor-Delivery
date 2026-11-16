@@ -1,0 +1,19 @@
+FAIL
+duration_s: 529.5360000000001
+ground_truth_path_length_m: 33.427319
+average_ground_truth_speed_m_s: 0.06312567795201836
+contact_sample_fraction: 0.0
+lidar_telemetry_fraction: 1.0
+moving_command_fraction: 0.9941993957703927
+final_window_duration_s: 20.0
+final_window_path_gain_m: 1.135579
+final_window_emergency_fraction: 0.0
+maximum_active_waypoint: 23
+mission_complete_reported: True
+goals_reached_ground_truth: 2
+collision_episodes: 0
+final_home_error_m: 0.12661583378077182
+position_rmse_m: 0.10673095602852765
+position_max_error_m: 0.166829
+full_mission_required: True
+- ground truth recorded 2/4 ordered goals

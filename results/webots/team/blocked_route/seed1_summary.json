@@ -1,0 +1,31 @@
+{
+  "source": "C:\\Users\\1\\iCloudDrive\\San Jose State University\\SJSU Year 3\\Fall 2026\\CMPE 185 Auto Mobile Robots\\Project\\Autonomous-Indoor-Delivery\\results\\webots\\team\\blocked_route\\seed1.csv",
+  "duration_s": 358.52799999999996,
+  "position_rmse_m": 0.030794582860844903,
+  "position_max_error_m": 0.717815,
+  "heading_rmse_rad": 0.009153422821496815,
+  "heading_max_error_rad": 0.120032,
+  "ground_truth_path_length_m": 24.623058,
+  "average_ground_truth_speed_m_s": 0.06867820086576223,
+  "contact_sample_fraction": 0.0,
+  "lidar_telemetry_fraction": 1.0,
+  "collision_episodes": 0,
+  "goals_reached": 4,
+  "mission_complete_reported": true,
+  "final_home_error_m": 0.06753253467773897,
+  "samples_with_estimate": 5603,
+  "maximum_active_waypoint": 4,
+  "final_window_duration_s": 20.0,
+  "final_window_path_gain_m": 1.2956070000000004,
+  "controller_state_sample_counts": {
+    "localize": 47,
+    "follow_rotate": 587,
+    "follow_drive": 4922,
+    "complete": 47
+  },
+  "safety_state_sample_counts": {
+    "localizing": 47,
+    "clear": 5509,
+    "inactive": 47
+  }
+}
