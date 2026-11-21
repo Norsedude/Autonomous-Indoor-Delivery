@@ -6,7 +6,8 @@ The team system (LiDAR Monte Carlo Localization, A* planning, reactive
 avoidance, and replanning) is implemented on top of the provided starter. See
 [docs/team_progress.md](docs/team_progress.md) for methods, status, and the
 symmetry finding. The provided baseline is still available for the required
-comparison.
+comparison. The degraded-sensor extension (`sensing.py`, method `team_robust`) and all
+Webots results are summarized in `results/webots/summary.md`.
 
 ## Windows setup (team machines)
 
@@ -35,6 +36,7 @@ default. To select a method, scenario, and seed for the next run:
 ```powershell
 python tools/set_run_config.py --method baseline --scenario nominal --seed 1
 python tools/set_run_config.py --method team --scenario kidnapped --seed 3
+python tools/set_run_config.py --method team_robust --scenario nominal --degradation severe   # extension
 python tools/set_run_config.py --clear     # back to project_config.json
 ```
 

@@ -9,6 +9,7 @@ Examples::
 
     python tools/set_run_config.py --method baseline --scenario nominal --seed 1
     python tools/set_run_config.py --method team --scenario kidnapped --seed 3
+    python tools/set_run_config.py --method team_robust --scenario nominal --degradation severe
     python tools/set_run_config.py --show
     python tools/set_run_config.py --clear      # back to project_config.json
 """
@@ -33,6 +34,8 @@ def main() -> None:
     parser.add_argument("--method", choices=sorted(experiments["methods"]))
     parser.add_argument("--scenario", choices=sorted(experiments["scenarios"]))
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--degradation", choices=sorted(experiments["degradations"]), default="none",
+                        help="Extension: inject LiDAR degradation (none, moderate, severe)")
     parser.add_argument("--show", action="store_true", help="Print the effective configuration summary")
     parser.add_argument("--clear", action="store_true", help="Delete config/run_overrides.json")
     args = parser.parse_args()
@@ -48,6 +51,8 @@ def main() -> None:
         scenario = args.scenario or "nominal"
         overrides = deep_merge(experiments["methods"][method]["config"], experiments["scenarios"][scenario].get("config", {}))
         overrides = deep_merge(overrides, {"experiment": {"method": method, "scenario": scenario, "seed": args.seed}})
+        if args.degradation != "none":
+            overrides = deep_merge(overrides, {"sensor_degradation": experiments["degradations"][args.degradation]})
         RUN_OVERRIDES_PATH.write_text(json.dumps(overrides, indent=2) + "\n", encoding="utf-8")
         print(f"Wrote {RUN_OVERRIDES_PATH.relative_to(PROJECT_ROOT)}")
         print(f"Webots instructions: {experiments['scenarios'][scenario].get('webots_instructions', '')}")
@@ -60,7 +65,9 @@ def main() -> None:
         f"planning={config['controller']['planning_mode']} "
         f"belief={config['localization'].get('initial_belief')} "
         f"scenario={config.get('experiment', {}).get('scenario')} "
-        f"seed={config.get('experiment', {}).get('seed')}"
+        f"seed={config.get('experiment', {}).get('seed')} "
+        f"robust_sensing={config.get('sensing', {}).get('robust', False)} "
+        f"degradation={config.get('sensor_degradation', {}).get('name', 'none')}"
     )
     print("Reset the simulation in Webots (Ctrl+Shift+T) so the controller reloads it.")
 

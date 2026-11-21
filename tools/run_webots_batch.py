@@ -78,9 +78,26 @@ def find_webots(explicit: str | None) -> Path:
     raise SystemExit("Webots executable not found; pass --webots PATH")
 
 
-def write_overrides(experiments: dict, method: str, scenario: str, seed: int) -> None:
+def move_with_retry(source: Path, destination: Path, attempts: int = 30) -> None:
+    """Move a log that may briefly be locked (Webots closing it, cloud sync)."""
+    for _ in range(attempts):
+        try:
+            shutil.move(str(source), destination)
+            return
+        except PermissionError:
+            time.sleep(1.0)
+    shutil.copyfile(source, destination)
+    try:
+        source.unlink()
+    except OSError:
+        print(f"warning: could not delete {source}; it was copied to {destination}", flush=True)
+
+
+def write_overrides(experiments: dict, method: str, scenario: str, seed: int, degradation: str = "none") -> None:
     overrides = deep_merge(experiments["methods"][method]["config"], experiments["scenarios"][scenario].get("config", {}))
     overrides = deep_merge(overrides, {"experiment": {"method": method, "scenario": scenario, "seed": seed}})
+    if degradation != "none":
+        overrides = deep_merge(overrides, {"sensor_degradation": experiments["degradations"][degradation]})
     RUN_OVERRIDES_PATH.write_text(json.dumps(overrides, indent=2) + "\n", encoding="utf-8")
 
 
@@ -89,31 +106,42 @@ def write_batch_world(scenario: str, max_time: float) -> None:
     BATCH_WORLD.write_text(world.rstrip() + "\n" + DRIVER_NODE.format(scenario=scenario, max_time=max_time), encoding="utf-8")
 
 
-def run_one(webots: Path, experiments: dict, method: str, scenario: str, seed: int, max_time: float, wall_timeout: float) -> dict:
-    write_overrides(experiments, method, scenario, seed)
+def run_one(
+    webots: Path, experiments: dict, method: str, scenario: str, seed: int, max_time: float, wall_timeout: float,
+    degradation: str = "none",
+) -> dict:
+    write_overrides(experiments, method, scenario, seed, degradation)
     write_batch_world(scenario, max_time)
     before = set(RESULTS.glob("run_*.csv"))
     start = time.time()
     command = [str(webots), "--batch", "--mode=fast", "--no-rendering", "--minimize", "--stdout", "--stderr", str(BATCH_WORLD)]
-    log_dir = OUTPUT / method / scenario
+    log_dir = OUTPUT / method / scenario if degradation == "none" else OUTPUT / "degraded" / degradation / method / scenario
     log_dir.mkdir(parents=True, exist_ok=True)
     console = log_dir / f"seed{seed}_console.txt"
     with console.open("w", encoding="utf-8", errors="replace") as handle:
+        process = subprocess.Popen(command, stdout=handle, stderr=subprocess.STDOUT)
         try:
-            completed = subprocess.run(command, stdout=handle, stderr=subprocess.STDOUT, timeout=wall_timeout)
-            exit_code = completed.returncode
+            exit_code = process.wait(timeout=wall_timeout)
         except subprocess.TimeoutExpired:
             exit_code = "timeout"
-            subprocess.run(["taskkill", "/F", "/T", "/IM", "webots-bin.exe"], capture_output=True) if sys.platform == "win32" else None
+            # Kill only the Webots instance this script started, never other windows.
+            if sys.platform == "win32":
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(process.pid)], capture_output=True)
+            else:
+                process.kill()
+            process.wait()
     new_logs = sorted(set(RESULTS.glob("run_*.csv")) - before, key=lambda path: path.stat().st_mtime)
-    record = {"method": method, "scenario": scenario, "seed": seed, "webots_exit": exit_code, "wall_clock_s": round(time.time() - start, 1)}
+    record = {"method": method, "scenario": scenario, "degradation": degradation, "seed": seed, "webots_exit": exit_code, "wall_clock_s": round(time.time() - start, 1)}
     if not new_logs:
         record["error"] = "no evaluation CSV was written"
         return record
     destination = log_dir / f"seed{seed}.csv"
-    shutil.move(str(new_logs[-1]), destination)
+    move_with_retry(new_logs[-1], destination)
     for extra in new_logs[:-1]:
-        extra.unlink()
+        try:
+            extra.unlink()
+        except OSError:
+            pass
     with destination.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     expected = 4 if experiments["methods"][method]["config"]["controller"]["planning_mode"] == "astar" else 23
@@ -132,6 +160,7 @@ def main() -> None:
     parser.add_argument("--max-time-s", type=float, default=900.0)
     parser.add_argument("--wall-timeout-s", type=float, default=3600.0)
     parser.add_argument("--webots")
+    parser.add_argument("--degradation", choices=sorted(experiments["degradations"]), action="append")
     args = parser.parse_args()
 
     webots = find_webots(args.webots)
@@ -141,13 +170,16 @@ def main() -> None:
     try:
         for method in methods:
             for scenario in scenarios:
-                for seed in args.seeds:
-                    record = run_one(webots, experiments, method, scenario, seed, args.max_time_s, args.wall_timeout_s)
-                    with (OUTPUT / "runs.jsonl").open("a", encoding="utf-8") as handle:
-                        handle.write(json.dumps(record) + "\n")
-                    print(json.dumps({k: record.get(k) for k in (
-                        "method", "scenario", "seed", "health_pass", "goals_reached_ground_truth",
-                        "collision_episodes", "duration_s", "position_rmse_m", "final_home_error_m", "wall_clock_s", "error")}), flush=True)
+                for degradation in args.degradation or ["none"]:
+                    for seed in args.seeds:
+                        record = run_one(
+                            webots, experiments, method, scenario, seed, args.max_time_s, args.wall_timeout_s, degradation
+                        )
+                        with (OUTPUT / "runs.jsonl").open("a", encoding="utf-8") as handle:
+                            handle.write(json.dumps(record) + "\n")
+                        print(json.dumps({k: record.get(k) for k in (
+                            "method", "scenario", "degradation", "seed", "health_pass", "goals_reached_ground_truth",
+                            "collision_episodes", "duration_s", "position_rmse_m", "final_home_error_m", "wall_clock_s", "error")}), flush=True)
     finally:
         if RUN_OVERRIDES_PATH.exists():
             RUN_OVERRIDES_PATH.unlink()

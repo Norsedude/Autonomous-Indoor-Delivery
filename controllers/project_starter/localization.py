@@ -233,16 +233,37 @@ class StudentLocalizer:
         self.field_resolution = resolution
         self.field_origin_x = occupancy_grid.origin_x
         self.field_origin_y = occupancy_grid.origin_y
-        sigma = float(s["sigma_hit_m"])
-        z_hit = float(s["z_hit"])
-        z_rand = float(s["z_rand"])
+        self.range_noise = 0.0
+        self.inlier_threshold = float(s["inlier_distance_m"])
+        self._build_log_field(float(s["sigma_hit_m"]))
+        clearance = float(s["free_space_clearance_m"])
+        self.free_cells = [index for index, value in enumerate(self.distance) if value >= clearance]
+        self.reset_belief(str(s["initial_belief"]))
+
+    def _build_log_field(self, sigma: float) -> None:
+        z_hit = float(self.settings["z_hit"])
+        z_rand = float(self.settings["z_rand"])
+        self.current_sigma = sigma
         self.log_field = [
             math.log(z_hit * math.exp(-0.5 * (d / sigma) ** 2) + z_rand) for d in self.distance
         ]
         self.log_outside = math.log(z_rand)
-        clearance = float(s["free_space_clearance_m"])
-        self.free_cells = [index for index, value in enumerate(self.distance) if value >= clearance]
-        self.reset_belief(str(s["initial_belief"]))
+
+    def set_range_noise(self, noise_std: float) -> None:
+        """Extension: widen the measurement model for an estimated range noise.
+
+        sigma = sqrt(sigma_hit^2 + noise^2); the inlier gate used for kidnap
+        detection becomes max(inlier_distance, 3 noise).  The field is only
+        rebuilt when sigma changes by more than 10 %.
+        """
+        if self.mode != "mcl" or not hasattr(self, "distance"):
+            return
+        base = float(self.settings["sigma_hit_m"])
+        sigma = math.sqrt(base * base + noise_std * noise_std)
+        self.range_noise = noise_std
+        self.inlier_threshold = max(float(self.settings["inlier_distance_m"]), 3.0 * noise_std)
+        if abs(sigma - self.current_sigma) > 0.1 * self.current_sigma:
+            self._build_log_field(sigma)
 
     def _field_index(self, x: float, y: float) -> int | None:
         fx = (x - self.field_origin_x) / self.field_resolution
@@ -438,7 +459,7 @@ class StudentLocalizer:
         beams = self._select_beams(scan_points_robot)
         if not beams:
             return 0.0
-        threshold = float(self.settings["inlier_distance_m"])
+        threshold = getattr(self, "inlier_threshold", float(self.settings["inlier_distance_m"]))
         c = math.cos(pose[2])
         s = math.sin(pose[2])
         inliers = 0

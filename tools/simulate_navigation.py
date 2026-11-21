@@ -68,7 +68,9 @@ def load_experiments() -> dict:
     return json.loads(EXPERIMENTS_PATH.read_text(encoding="utf-8"))
 
 
-def build_config(method: str, scenario: str, seed: int, experiments: dict | None = None) -> tuple[dict, dict]:
+def build_config(
+    method: str, scenario: str, seed: int, experiments: dict | None = None, degradation: str = "none"
+) -> tuple[dict, dict]:
     """Return (controller config, simulation settings) for a method/scenario/seed."""
     experiments = experiments or load_experiments()
     config = load_project_config(overrides_path=None)
@@ -76,6 +78,8 @@ def build_config(method: str, scenario: str, seed: int, experiments: dict | None
     scenario_spec = experiments["scenarios"][scenario]
     config = deep_merge(config, scenario_spec.get("config", {}))
     config = deep_merge(config, {"experiment": {"method": method, "scenario": scenario, "seed": seed}})
+    if degradation != "none":
+        config = deep_merge(config, {"sensor_degradation": experiments["degradations"][degradation]})
     simulation = deep_merge(experiments.get("simulation_defaults", {}), scenario_spec.get("simulation", {}))
     return config, simulation
 
@@ -90,8 +94,9 @@ def run_trial(
     experiments: dict | None = None,
     config_overrides: dict | None = None,
     verbose: bool = False,
+    degradation: str = "none",
 ) -> dict:
-    config, sim = build_config(method, scenario, seed, experiments)
+    config, sim = build_config(method, scenario, seed, experiments, degradation)
     if config_overrides:
         config = deep_merge(config, config_overrides)
     waypoints = json.loads((PROJECT_ROOT / "maps" / "waypoints.json").read_text(encoding="utf-8"))
@@ -254,6 +259,7 @@ def run_trial(
     summary = {
         "method": method,
         "scenario": scenario,
+        "degradation": degradation,
         "seed": seed,
         "success": success,
         "goals_reached": goals_reached,
@@ -290,6 +296,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--seeds", type=int, nargs="+", help="Run several seeds (overrides --seed)")
     parser.add_argument("--max-time-s", type=float)
+    parser.add_argument("--degradation", choices=sorted(experiments["degradations"]), default="none")
     parser.add_argument("--output-dir", type=Path, help="Write one evaluation-format CSV per trial and summary.json")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
@@ -301,16 +308,16 @@ def main() -> None:
         for seed in seeds:
             csv_path = None
             if args.output_dir is not None:
-                csv_path = args.output_dir / f"{args.method}_{scenario}_seed{seed}.csv"
+                csv_path = args.output_dir / f"{args.method}_{scenario}_{args.degradation}_seed{seed}.csv"
             summary = run_trial(
                 args.method, scenario, seed, csv_path, args.max_time_s,
-                experiments=experiments, verbose=args.verbose,
+                experiments=experiments, verbose=args.verbose, degradation=args.degradation,
             )
             summaries.append(summary)
             print(json.dumps(summary))
     if args.output_dir is not None:
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        (args.output_dir / f"summary_{args.method}.json").write_text(json.dumps(summaries, indent=2) + "\n", encoding="utf-8")
+        (args.output_dir / f"summary_{args.method}_{args.degradation}.json").write_text(json.dumps(summaries, indent=2) + "\n", encoding="utf-8")
     raise SystemExit(0 if all(s["success"] for s in summaries) else 1)
 
 

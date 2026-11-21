@@ -1,16 +1,16 @@
 # Group 5 (Tron): implementation notes and progress
 
-Team: Mateo Ortega, Zihao He, Devin Roberson. Status as of 15 November 2026.
+Team: Mateo Ortega, Zihao He, Devin Roberson. Status as of 20 November 2026.
 
 ## Where the project stands against our proposal schedule
 
 | Proposal date | Milestone | Status |
 |---|---|---|
-| Oct 25 | World runs, odometry, LiDAR, display, first CSV log (Checkpoint 1) | Offline checks pass. **Still needed:** record one untouched baseline Webots run with the health check and plot (steps below). |
+| Oct 25 | World runs, odometry, LiDAR, display, first CSV log (Checkpoint 1) | Done in Webots. The untouched baseline completes the route but misses C by 0.23 m (see Webots results); confirm with the instructor. |
 | Oct 25 | Research on Dijkstra/A* and robustness testing | A* implemented (`planning.py`). |
 | Nov 8 | Particle belief and LiDAR measurement update (Checkpoint 2) | Done: `localization.py`. |
-| Nov 15 | Planned path, path following, avoidance, replanning (Checkpoint 3) | Done: `planning.py`, `navigation.py`, `mission.py`. Verified offline; needs Webots runs. |
-| Nov 22 | Robustness extension, data sets, analysis | Not started. Hooks already exist (see "Extension hooks"). |
+| Nov 15 | Planned path, path following, avoidance, replanning (Checkpoint 3) | Done: `planning.py`, `navigation.py`, `mission.py`. Verified in Webots (40 runs). |
+| Nov 22 | Robustness extension, data sets, analysis | Done: `sensing.py`, 50 Webots runs, `results/webots/summary.md`. |
 | Nov 29 | Report and slides | Not started. |
 
 ## Code map
@@ -22,9 +22,12 @@ Team: Mateo Ortega, Zihao He, Devin Roberson. Status as of 15 November 2026.
 | `controllers/project_starter/localization.py` | Monte Carlo Localization, global scan-matching search, multi-hypothesis recovery. |
 | `controllers/project_starter/planning.py` | A*, the clearance-inflated planning grid, the LiDAR dynamic-obstacle layer, line-of-sight simplification. |
 | `controllers/project_starter/navigation.py` | Provided waypoint follower and safety layer (unchanged), plus `ReactiveAvoider`. |
+| `controllers/project_starter/sensing.py` | Extension: `SensorDegrader` (experimental condition) and `RobustScanFilter` (mitigation). |
 | `config/project_config.json` | Default run: team system, nominal scenario. All tuning parameters. |
-| `config/experiments.json` | The two methods, the four required scenarios (plus one stress test), and seeds 1-5. |
-| `tools/set_run_config.py` | Picks method/scenario/seed for the next Webots run (`config/run_overrides.json`). |
+| `config/experiments.json` | Methods (`baseline`, `team`, `team_robust`), the four required scenarios (plus one stress test), degradation levels, and seeds 1-5. |
+| `tools/set_run_config.py` | Picks method/scenario/seed/degradation for the next Webots run (`config/run_overrides.json`). |
+| `tools/run_webots_batch.py` | Runs Webots headless for many method/scenario/degradation/seed combinations and collects the logs. |
+| `tools/summarize_webots.py` | Builds `results/webots/summary.md` (aggregate and per-trial tables). |
 | `tools/simulate_navigation.py` | Offline closed-loop simulator of the full controller with noise, blocker motion and kidnapping. |
 | `tests/test_navigation_stack.py` | A* required cases, planner, MCL, kidnap detection, avoidance, closed-loop smoke test. |
 
@@ -99,16 +102,44 @@ No collisions in any of the 40 runs. Baseline runs are identical across seeds be
 
 ## How to run each scenario in Webots
 
-1. `python tools/set_run_config.py --method team --scenario nominal --seed 1` (or `--method baseline`). The tool prints what to do in Webots for that scenario.
+1. `python tools/set_run_config.py --method team --scenario nominal --seed 1` (or `--method baseline` / `team_robust`, optionally `--degradation moderate|severe`). The tool prints what to do in Webots for that scenario.
 2. In Webots: File > Reload World (or Ctrl+Shift+T to reset), then run. Keep the 3D view focused for the Supervisor keys (`2` moves the blocker, `K` kidnaps, `N` starts a new log).
 3. When the robot stops at HOME: `python tools/check_run_health.py results/run_<stamp>.csv --require-complete` (A* runs need 4 goals instead of 23 waypoints; the tool detects this from the log), then `python tools/analyze_run.py results/run_<stamp>.csv`.
 4. Repeat for seeds 1-5 and each scenario. Keep every CSV, including failures.
 
 The baseline is expected to fail the uncertain-start, blocked-route and kidnapped scenarios. That contrast is the required comparison.
 
-## Extension hooks (robustness under degraded sensors, due Nov 22)
+## Extension: robustness under degraded sensors (proposal hypothesis)
 
-`tools/simulate_navigation.py` already takes LiDAR noise (`lidar_noise_std_m`) and wheel-slip parameters from `config/experiments.json` (`simulation_defaults`). Adding dropout means one more field and a few lines in `run_trial`. In Webots, the LiDAR `noise` field in the world sets range noise. Keep the evaluated world unchanged; use a copy for the extension.
+**Hypothesis (proposal):** a prediction and denoising algorithm improves the robot's performance with degraded sensors.
+
+**Degradation (experimental condition, `SensorDegrader`).** Injected in software in the robot controller, before any processing. It is seeded from the trial seed and identical for every method. Webots' LiDAR has no dropout option, so state this in the report.
+
+| Level | Scan dropout | Beam dropout | Extra range noise | Spurious short returns |
+|---|---|---|---|---|
+| moderate | 2 % chance per step, 8-step bursts (about 14 % of scans) | 10 % | 0.02 m | 2 % |
+| severe | 4 % chance per step, 15-step bursts (about 38 % of scans) | 30 % | 0.05 m | 5 % |
+
+**Mitigation (`team_robust`, `RobustScanFilter`):**
+1. *Prediction:* during a dropout, the last good scan is re-projected with odometry and given to the local avoider for up to 20 steps; the localizer never sees it.
+2. *Denoising:* median of three adjacent ranges.
+3. *Noise estimation:* `sigma = 1.4826 MAD(e) / sqrt(1.5)` from second differences of adjacent ranges. The localizer widens its likelihood field to `sqrt(sigma_hit^2 + (0.67 sigma)^2)` and its inlier gate to `3 sigma`, and the obstacle-detection gate becomes `max(0.10, 3 sigma)` so scattered wall returns are not inserted as obstacles.
+4. *Free-space evidence:* only runs of at least 3 adjacent no-return beams clear obstacle cells.
+
+**Webots results (5 seeds each; full table in `results/webots/summary.md`):**
+
+| Scenario | Degradation | team | team_robust |
+|---|---|---|---|
+| Nominal | none | 5/5, 377 s | 5/5, 367 s |
+| Nominal | moderate | 5/5, 418 ± 82 s | 5/5, 369 ± 15 s |
+| Nominal | severe | **0/5** (stalls after A; 21 collisions) | **4/5**, 448 s, 0 collisions |
+| Blocked route | none | 5/5, 359 s | 5/5, 359 s |
+| Blocked route | moderate | 5/5, 379 s | 5/5, 360 s |
+| Blocked route | severe | 4/5 (7 collisions in one run) | **5/5**, 364 s, 0 collisions |
+
+The hypothesis is supported: the mitigation does not cost anything without degradation, makes moderate-degradation runs faster and more consistent, and turns severe degradation from 4/10 into 9/10 successes with zero collisions. Failure case: `team_robust` nominal severe seed 1 stalls after goal A (localization is fine, RMSE 0.047 m; the planner is blocked, most likely by obstacle cells inserted from noisy returns in the A room's doorway). Success is scored on the mission criteria; the health checker's "LiDAR telemetry >= 80 %" sanity rule is excluded because the degraded runs drop scans on purpose.
+
+Rerun: `python tools/run_webots_batch.py --method team --method team_robust --scenario nominal --scenario blocked_route --degradation none --degradation moderate --degradation severe --seeds 1 2 3 4 5`, then `python tools/summarize_webots.py`.
 
 ## Things to verify in Webots (not testable offline)
 

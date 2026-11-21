@@ -33,6 +33,7 @@ from localization import StudentLocalizer
 from navigation import ReactiveAvoider, SafetyLayer, WaypointFollower, unicycle_to_wheels
 from odometry import DifferentialDriveOdometry, Pose2D
 from planning import GlobalPlanner
+from sensing import RobustScanFilter, SensorDegrader
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -107,6 +108,10 @@ class MissionController:
         self.mission_settings = dict(DEFAULT_MISSION_SETTINGS)
         self.mission_settings.update(config.get("mission", {}))
         self.lidar_offset = float(robot.get("lidar_offset_x_m", -0.0095))
+        # Extension: degraded-sensor condition and robust sensing.
+        self.degrader = SensorDegrader(config.get("sensor_degradation"), self.seed)
+        self.scan_filter = RobustScanFilter(config.get("sensing"))
+        self.scan_held = False
 
         initial_pose = tuple(config["coordinate_frame"]["initial_pose"])
         self.odometry = DifferentialDriveOdometry(
@@ -158,6 +163,10 @@ class MissionController:
             else None
         )
 
+        self.base_detection_distance = (
+            float(self.planner.settings["dynamic_detection_distance_m"]) if self.planner is not None else 0.0
+        )
+
         self.route = [tuple(point) for point in waypoints_data["baseline_waypoints"]]
         goal_lookup = {goal["name"]: goal["position"] for goal in waypoints_data["delivery_goals"]}
         goal_lookup["HOME"] = waypoints_data["home"]["position"]
@@ -187,7 +196,9 @@ class MissionController:
 
     @property
     def mode_label(self) -> str:
-        return f"{self.localization_mode}+{self.planning_mode}|{self.scenario}|seed={self.seed}"
+        robust = "+robust" if self.scan_filter.enabled else ""
+        degradation = f"|degr={self.degrader.settings['name']}" if self.degrader.enabled else ""
+        return f"{self.localization_mode}+{self.planning_mode}{robust}|{self.scenario}{degradation}|seed={self.seed}"
 
     # ------------------------------------------------------------------
     def step(
@@ -200,7 +211,24 @@ class MissionController:
         self.step_count += 1
         self.time_s += self.dt
         odometry_pose, delta_motion = self.odometry.update(left_encoder, right_encoder)
-        estimate = self.localizer.update(odometry_pose, delta_motion, scan_points, self.grid)
+        scan_points, free_ray_bearings = self.degrader.apply(scan_points, free_ray_bearings)
+        localizer_scan = scan_points
+        self.scan_held = False
+        if self.scan_filter.enabled:
+            scan_points, free_ray_bearings, self.scan_held = self.scan_filter.process(
+                scan_points, free_ray_bearings, odometry_pose
+            )
+            # A held (predicted) scan is for the avoider only, never evidence.
+            localizer_scan = [] if self.scan_held else scan_points
+            # Median-of-3 leaves about 0.67 of the raw Gaussian noise std.
+            filtered_noise = 0.67 * self.scan_filter.noise_estimate
+            self.localizer.set_range_noise(filtered_noise)
+            if self.planner is not None:
+                # Wall returns scattered by noise must not become obstacles.
+                self.planner.settings["dynamic_detection_distance_m"] = max(
+                    self.base_detection_distance, 3.0 * filtered_noise
+                )
+        estimate = self.localizer.update(odometry_pose, delta_motion, localizer_scan, self.grid)
 
         self.free_ray_bearings = free_ray_bearings
         if self.planning_mode == "astar":
@@ -246,6 +274,9 @@ class MissionController:
             "recovery_events": loc.recovery_events,
             "replan_count": self.replan_count,
             "last_replan_reason": self.last_replan_reason,
+            "scan_held": self.scan_held,
+            "dropped_scans": self.degrader.dropped_scans,
+            "estimated_range_noise": self.scan_filter.noise_estimate,
         }
         return StepResult(left, right, linear, angular, estimate, telemetry)
 
@@ -333,7 +364,7 @@ class MissionController:
             self._request_plan("pose_jump")
 
         # 3. Update the dynamic obstacle layer from LiDAR.
-        if loc.updated_this_step and confident:
+        if loc.updated_this_step and confident and not self.scan_held:
             # Only with a trustworthy pose; otherwise walls become "obstacles".
             planner.update_dynamic(estimate, scan_points, self.lidar_offset, self.free_ray_bearings)
 
