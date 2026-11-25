@@ -28,6 +28,7 @@ RUNS = PROJECT_ROOT / "results" / "webots" / "runs.jsonl"
 FIGURES = PROJECT_ROOT / "results" / "webots" / "figures"
 
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
+from check_run_health import recovery_metrics  # noqa: E402
 from summarize_webots import load_rows  # noqa: E402
 
 try:
@@ -134,13 +135,15 @@ def error_traces(latest, scenario, filename, title, align_on_kidnap) -> None:
     methods = [m for m in METHODS if group(latest, m, scenario)]
     if not methods:
         return
-    fig, axes = plt.subplots(1, len(methods), figsize=(4 * len(methods), 3.2), sharey=True, squeeze=False)
+    fig, axes = plt.subplots(1, len(methods), figsize=(4.5 * len(methods), 3.6), sharey=True, squeeze=False)
     for ax, method in zip(axes[0], methods):
         for r in group(latest, method, scenario):
             rows = load_rows(r)
             if not rows:
                 continue
-            t0 = r.get("disturbance_time_s") if align_on_kidnap else 0.0
+            # runs.jsonl records written before the recovery metric existed
+            # lack disturbance_time_s, so derive it from the CSV itself.
+            t0 = recovery_metrics(rows)["disturbance_time_s"] if align_on_kidnap else 0.0
             if t0 is None:
                 t0 = 0.0
             ts, es = [], []
@@ -153,8 +156,13 @@ def error_traces(latest, scenario, filename, title, align_on_kidnap) -> None:
             ok = mission_success(r)
             ax.plot(ts, es, linewidth=1.5, color=COLORS[method], alpha=1.0 if ok else 0.45,
                     linestyle="-" if ok else "--")
-            if ts:
-                ax.text(ts[-1], es[-1], f" s{r['seed']}", fontsize=7, color=MUTED, va="center")
+            # Label each trace at its last point inside the plotted window
+            # (a label at t = 900 s would push the layout off the figure).
+            x_max = 200.0 if align_on_kidnap else 60.0
+            visible = [i for i, t in enumerate(ts) if t <= x_max]
+            if visible:
+                i = visible[-1]
+                ax.text(ts[i], es[i], f" s{r['seed']}", fontsize=7, color=MUTED, va="center")
         ax.axhline(0.20, color=MUTED, linewidth=0.8, linestyle=":")
         if align_on_kidnap:
             ax.axvline(0.0, color=MUTED, linewidth=0.8)
