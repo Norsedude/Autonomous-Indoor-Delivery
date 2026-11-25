@@ -27,10 +27,23 @@ saving rewrites the `.wbt` file and the validator then fails.
 1. Open `worlds/cmpe185_indoor_delivery.wbt`.
 2. Set a top-down camera so all four rooms are visible (use the viewpoint
    menu or drag the view); zoom until the outer walls fill the frame.
-3. The robot's **student display** shows the map, the A* path, the live
-   LiDAR points, the estimated pose (arrow), the goals, and a status block
-   (`mode`, `waypoint`, `control`, `safety`). Enlarge it and place it in a
-   corner of the 3D view so the 3D world and the display are both visible.
+3. Show the robot's **student display**: Webots hides it by default. Use
+   Overlays > Display Devices and enable `student display` (or right-click
+   the robot in the 3D view and use its Overlays entry). It appears as a
+   small panel inside the 3D view: drag it to a corner and drag its edge to
+   enlarge it. Close the text-editor pane on the right to give the 3D view
+   more room. Display legend:
+
+   | Colour | Meaning |
+   |---|---|
+   | dark grey | walls from the static occupancy map |
+   | blue line | current A* path (waypoints after line-of-sight simplification) |
+   | purple dots | MCL particles (150 of the 300 drawn) |
+   | cyan dots | current LiDAR scan placed at the estimated pose; they sit on the walls when localization is right |
+   | red dot + line | estimated pose and heading |
+   | small red squares | obstacles detected by LiDAR that are not in the map (the blocker) |
+   | blue / green / orange / grey dots | goals A, B, C and HOME |
+   | text (top left) | method, waypoint, controller state, safety state, goal n/4, particle count, LiDAR inlier ratio |
 4. Keep the simulation clock (top toolbar) visible: some steps are timed.
 
 ## 2. How to record
