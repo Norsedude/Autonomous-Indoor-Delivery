@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import json
 import math
 from pathlib import Path
@@ -20,7 +21,11 @@ def choose_log(project_root: Path, requested: str | None) -> Path:
 
 
 def read_rows(path: Path) -> list[dict]:
-    with path.open(newline="", encoding="utf-8") as handle:
+    """Read a plain or gzip-compressed (``.csv.gz``) evaluation CSV."""
+    if not path.exists() and path.with_name(path.name + ".gz").exists():
+        path = path.with_name(path.name + ".gz")
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
 
 

@@ -9,7 +9,6 @@ CSV is available locally.  Writes ``results/webots/summary.md``.
 
 from __future__ import annotations
 
-import csv
 import json
 import math
 import statistics
@@ -25,7 +24,7 @@ METHODS = ["baseline", "team", "team_robust"]
 DEGRADATIONS = ["none", "moderate", "severe"]
 
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
-from check_run_health import recovery_metrics  # noqa: E402
+from check_run_health import read_csv_rows, recovery_metrics  # noqa: E402
 
 
 def load_rows(record: dict) -> list[dict] | None:
@@ -37,10 +36,9 @@ def load_rows(record: dict) -> list[dict] | None:
     if not record.get("csv"):
         return None
     path = PROJECT_ROOT / record["csv"].replace("\\", "/")
-    if not path.is_file():
+    if not path.is_file() and not path.with_name(path.name + ".gz").is_file():
         return None
-    with path.open(newline="", encoding="utf-8") as handle:
-        return list(csv.DictReader(handle))
+    return read_csv_rows(path)
 
 
 def heading_rmse(rows: list[dict] | None) -> float | None:

@@ -21,7 +21,7 @@ Examples::
 from __future__ import annotations
 
 import argparse
-import csv
+import gzip
 import json
 import platform
 import shutil
@@ -34,7 +34,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "controllers" / "project_starter"))
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
 
-from check_run_health import evaluate  # noqa: E402
+from check_run_health import evaluate, read_csv_rows  # noqa: E402
 from mission import RUN_OVERRIDES_PATH, deep_merge  # noqa: E402
 
 WEBOTS_CANDIDATES = [
@@ -143,8 +143,13 @@ def run_one(
             extra.unlink()
         except OSError:
             pass
-    with destination.open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.DictReader(handle))
+    rows = read_csv_rows(destination)
+    # Keep the committed logs small: store them gzip-compressed.
+    compressed = destination.with_name(destination.name + ".gz")
+    with destination.open("rb") as source, gzip.open(compressed, "wb", compresslevel=9) as target:
+        shutil.copyfileobj(source, target)
+    destination.unlink()
+    destination = compressed
     expected = 4 if experiments["methods"][method]["config"]["controller"]["planning_mode"] == "astar" else 23
     passed, issues, metrics = evaluate(rows, require_complete=True, expected_waypoints=expected)
     record.update({"csv": str(destination.relative_to(PROJECT_ROOT)), "health_pass": passed, "issues": issues, **metrics})

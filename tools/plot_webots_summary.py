@@ -134,7 +134,7 @@ def error_traces(latest, scenario, filename, title, align_on_kidnap) -> None:
     methods = [m for m in METHODS if group(latest, m, scenario)]
     if not methods:
         return
-    fig, axes = plt.subplots(1, len(methods), figsize=(4 * len(methods), 3.2), sharey=True, squeeze=False)
+    fig, axes = plt.subplots(1, len(methods), figsize=(4 * len(methods), 3.6), sharey=True, squeeze=False)
     for ax, method in zip(axes[0], methods):
         for r in group(latest, method, scenario):
             rows = load_rows(r)
@@ -153,8 +153,6 @@ def error_traces(latest, scenario, filename, title, align_on_kidnap) -> None:
             ok = mission_success(r)
             ax.plot(ts, es, linewidth=1.5, color=COLORS[method], alpha=1.0 if ok else 0.45,
                     linestyle="-" if ok else "--")
-            if ts:
-                ax.text(ts[-1], es[-1], f" s{r['seed']}", fontsize=7, color=MUTED, va="center")
         ax.axhline(0.20, color=MUTED, linewidth=0.8, linestyle=":")
         if align_on_kidnap:
             ax.axvline(0.0, color=MUTED, linewidth=0.8)
@@ -167,8 +165,9 @@ def error_traces(latest, scenario, filename, title, align_on_kidnap) -> None:
         ax.set_title(METHOD_LABELS[method], fontsize=9, color=TEXT, loc="left")
         style(ax)
     axes[0][0].set_ylabel("Position error (m)")
-    fig.suptitle(title + "  (solid = mission success, dashed = failure; dotted = 0.20 m)", fontsize=9, color=TEXT, x=0.01, ha="left")
-    fig.tight_layout()
+    fig.suptitle(title + "  (one line per seed; solid = mission success, dashed = failure; dotted = 0.20 m)",
+                 fontsize=9, color=TEXT, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(FIGURES / filename, dpi=200)
     plt.close(fig)
 

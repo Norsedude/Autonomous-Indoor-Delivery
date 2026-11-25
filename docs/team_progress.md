@@ -1,6 +1,6 @@
 # Group 5 (Tron): implementation notes and progress
 
-Team: Mateo Ortega, Zihao He, Devin Roberson. Status as of 20 November 2026.
+Team: Mateo Ortega, Zihao He, Devin Roberson. Status as of 25 November 2026.
 
 ## Where the project stands against our proposal schedule
 
@@ -81,20 +81,22 @@ All four rooms are congruent, including the door positions. With the blocker at 
 - In the offline kidnapped trials (kidnap to (0.9, -2.1, pi) at t = 150 s, robot between A and B), the closer hypothesis is the true one, so recovery succeeds. Kidnapping at t ≈ 60–100 s (robot on the west side) makes the twin the closer one, and the run fails. This is a fundamental observability limit, not a tuning problem. It belongs in the failure analysis.
 - An unmapped obstacle cannot break the tie either, because the measurement model scores scans against the static map only.
 
-## Webots results (15 Nov 2026, headless batch, evaluation Supervisor logs)
+## Webots results (25 Nov 2026, full re-run with committed logs)
 
-Produced by `python tools/run_webots_batch.py --method baseline --method team --all-scenarios --seeds 1 2 3 4 5`. CSVs, console output, and `runs.jsonl` (health metrics) are in `results/webots/`. The scripted `scenario_driver` performs the `2`/`K` key actions at fixed times in a generated copy of the world; the official world and the evaluation Supervisor are untouched.
+All 100 trials were re-run headless in Webots R2025a (Linux, `xvfb-run`) with `tools/run_webots_batch.py`: 3 methods x 4 required scenarios x seeds 1-5, plus the extension's degraded-sensor runs. Every evaluation-Supervisor CSV is committed (gzip-compressed) under `results/webots/`; tables in `results/webots/summary.md`, figures in `results/webots/figures/` (`python tools/plot_webots_summary.py`). The scripted `scenario_driver` performs the `2`/`K` actions at fixed times in a generated copy of the world; the official world and the evaluation Supervisor are untouched.
 
-| Scenario | Baseline (health PASS / goals) | Team (health PASS / goals) |
-|---|---|---|
-| Nominal | 0/5, 2 of 4 goals (misses C by 0.23 m, odometry drift) | 5/5, 4 goals, 363-396 s, RMSE 0.025-0.037 m |
-| Uncertain start | 0/5, 0 goals | 5/5, 4 goals |
-| Blocked route (blocker to position 2 at 20 s) | 0/5, 0 goals (safety layer latches "blocked") | 5/5, 4 goals |
-| Kidnapped (K at 150 s) | 0/5, 1 goal | 2/5 (seeds 2, 4); seeds 1, 3, 5 committed to the 180° twin |
+| Scenario | Baseline (success / goals) | Team | Team + robust sensing |
+|---|---|---|---|
+| Nominal | 0/5, 2 of 4 goals (misses C, odometry drift), RMSE 0.107 m | 5/5, 365 s, RMSE 0.029 m | 5/5, 369 s, RMSE 0.029 m |
+| Uncertain start | 0/5, 0 goals, RMSE 1.81 m | 5/5, 362 s; localized on the first control step | 5/5, 362 s |
+| Blocked route (blocker to position 2 at 20 s) | 0/5, 0 goals (safety layer latches "blocked") | 5/5, 359 s | 5/5, 359 s |
+| Kidnapped (K at 150 s) | 0/5, 1 goal, never recovers | 5/5, recovery 56.7 s | 5/5, recovery 56.6 s |
 
-No collisions in any of the 40 runs. Baseline runs are identical across seeds because Webots physics and the baseline are deterministic.
+No collisions in any undegraded run.
 
-**Checkpoint 1 note.** The untouched baseline completes all 23 waypoints and returns within 0.13 m of HOME. Its odometry error grows to about 0.17 m, so the ground truth passes 0.23 m from C (tolerance 0.20 m), and `check_run_health.py --require-complete` reports FAIL: "ground truth recorded 2/4 ordered goals". See `results/webots/baseline/nominal/seed1_plots.png`. This is the drift the assignment asks us to explain; confirm with the instructor whether a near-miss baseline is acceptable for Checkpoint 1.
+**Kidnapped: report both platforms.** The earlier Windows batch (15 Nov, records kept in `runs.jsonl`) gave 2/5 for the team system: seeds 1, 3, 5 committed to the 180-degree twin pose. The Linux re-run gives 5/5 with identical recovery times for every seed, because the kidnap happens at the same moment and the filter picks the true hypothesis. Which hypothesis wins depends on where the robot is at the kidnap relative to the twin (see the symmetry finding above), and small timing differences between platforms change that. This is the observability limit, not a tuning success, and it belongs in the failure analysis.
+
+**Checkpoint 1 note.** The untouched baseline completes all 23 waypoints and returns within 0.13 m of HOME, but its odometry error grows enough that the ground truth passes C outside the 0.20 m tolerance, so `check_run_health.py --require-complete` reports "ground truth recorded 2/4 ordered goals". This is the drift the assignment asks us to explain; confirm with the instructor whether a near-miss baseline is acceptable for Checkpoint 1.
 
 ## Offline results so far
 
@@ -126,18 +128,18 @@ The baseline is expected to fail the uncertain-start, blocked-route and kidnappe
 3. *Noise estimation:* `sigma = 1.4826 MAD(e) / sqrt(1.5)` from second differences of adjacent ranges. The localizer widens its likelihood field to `sqrt(sigma_hit^2 + (0.67 sigma)^2)` and its inlier gate to `3 sigma`, and the obstacle-detection gate becomes `max(0.10, 3 sigma)` so scattered wall returns are not inserted as obstacles.
 4. *Free-space evidence:* only runs of at least 3 adjacent no-return beams clear obstacle cells.
 
-**Webots results (5 seeds each; full table in `results/webots/summary.md`):**
+**Webots results (5 seeds each, 25 Nov re-run; full table in `results/webots/summary.md`, figure `results/webots/figures/extension_degradation.png`):**
 
 | Scenario | Degradation | team | team_robust |
 |---|---|---|---|
-| Nominal | none | 5/5, 377 s | 5/5, 367 s |
-| Nominal | moderate | 5/5, 418 ± 82 s | 5/5, 369 ± 15 s |
-| Nominal | severe | **0/5** (stalls after A; 21 collisions) | **4/5**, 448 s, 0 collisions |
+| Nominal | none | 5/5, 365 s | 5/5, 369 s |
+| Nominal | moderate | 5/5, 405 ± 37 s | 5/5, 367 ± 5 s |
+| Nominal | severe | **0/5** (stalls after A; 9 collisions) | **5/5**, 509 ± 221 s, 0 collisions |
 | Blocked route | none | 5/5, 359 s | 5/5, 359 s |
-| Blocked route | moderate | 5/5, 379 s | 5/5, 360 s |
-| Blocked route | severe | 4/5 (7 collisions in one run) | **5/5**, 364 s, 0 collisions |
+| Blocked route | moderate | 5/5, 373 ± 10 s | 5/5, 360 ± 2 s |
+| Blocked route | severe | 5/5, 399 ± 20 s | 5/5, 367 ± 9 s |
 
-The hypothesis is supported: the mitigation does not cost anything without degradation, makes moderate-degradation runs faster and more consistent, and turns severe degradation from 4/10 into 9/10 successes with zero collisions. Failure case: `team_robust` nominal severe seed 1 stalls after goal A (localization is fine, RMSE 0.047 m; the planner is blocked, most likely by obstacle cells inserted from noisy returns in the A room's doorway). Success is scored on the mission criteria; the health checker's "LiDAR telemetry >= 80 %" sanity rule is excluded because the degraded runs drop scans on purpose.
+The hypothesis is supported: the mitigation costs nothing without degradation, makes degraded runs faster and more consistent, and turns nominal-severe from 0/5 into 5/5 with zero collisions. The large time spread for team_robust nominal-severe comes from seed 4, which completed only at 897 s (3 s before the 900 s limit) after long stalls on the A->B and C->HOME legs; the other four seeds took 366-462 s. Count it as a success under the criteria but call it marginal in the report. In the earlier Windows batch, team_robust nominal-severe seed 1 stalled after goal A (4/5) and team blocked-route-severe had one collision run (4/5): mention both as the remaining fragility. Success is scored on the mission criteria; the health checker's "LiDAR telemetry >= 80 %" sanity rule is excluded because the degraded runs drop scans on purpose.
 
 Rerun: `python tools/run_webots_batch.py --method team --method team_robust --scenario nominal --scenario blocked_route --degradation none --degradation moderate --degradation severe --seeds 1 2 3 4 5`, then `python tools/summarize_webots.py`.
 

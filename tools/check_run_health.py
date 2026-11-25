@@ -10,8 +10,23 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import math
 from pathlib import Path
+
+
+def read_csv_rows(path: Path) -> list[dict]:
+    """Read an evaluation CSV, plain or gzip-compressed (``.csv.gz``).
+
+    If ``path`` does not exist but ``path`` + ``.gz`` does, that is read, so
+    the committed compressed logs work with the same commands.
+    """
+    path = Path(path).expanduser()
+    if not path.exists() and path.with_name(path.name + ".gz").exists():
+        path = path.with_name(path.name + ".gz")
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
 
 
 def as_float(row: dict, key: str) -> float | None:
@@ -298,8 +313,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    with args.csv_file.expanduser().open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.DictReader(handle))
+    rows = read_csv_rows(args.csv_file)
     expected_waypoints = args.expected_waypoints
     if expected_waypoints is None:
         # In A* mode active_waypoint counts completed goals (A, B, C, HOME).
