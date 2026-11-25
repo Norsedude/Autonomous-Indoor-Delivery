@@ -52,6 +52,38 @@ python tools/simulate_navigation.py --method team --all-scenarios --seeds 1 2 3 
 python tools/summarize_offline.py
 ```
 
+## Reproducing the reported results
+
+Every number in `results/webots/summary.md` comes from an evaluation-Supervisor
+CSV committed under `results/webots/` (one per method, scenario, degradation
+level, and seed; seeds 1-5). The run settings are in `config/experiments.json`
+and each run's metrics are appended to `results/webots/runs.jsonl` (the
+latest record per combination is used).
+
+```bash
+# 1. Run the experiments headless (about 1.5-5 min of wall time per run)
+python tools/run_webots_batch.py --method baseline --method team --method team_robust --all-scenarios --seeds 1 2 3 4 5
+python tools/run_webots_batch.py --method team --method team_robust --scenario nominal --scenario blocked_route --degradation moderate --degradation severe --seeds 1 2 3 4 5
+# 2. Tables (success, time, path, collisions, RMSE, convergence and recovery time)
+python tools/summarize_webots.py
+# 3. Report figures -> results/webots/figures/ (needs matplotlib)
+python tools/plot_webots_summary.py
+```
+
+On Windows, `run_webots_batch.py` finds Webots in `C:\Program Files\Webots`;
+elsewhere pass `--webots PATH`. On a Linux machine without a display, wrap the
+command in `xvfb-run -a` (for example
+`xvfb-run -a python3 tools/run_webots_batch.py --webots /opt/webots/webots ...`).
+The scripted `scenario_driver` performs the `2` and `K` actions at fixed
+times in a generated copy of the world (`worlds/_batch.wbt`, not committed);
+the official world and the evaluation Supervisor are not modified.
+
+Recovery metrics (`tools/check_run_health.py`): a kidnap is detected as a
+ground-truth jump of more than 0.25 m between log rows. Recovery time is the
+time from the jump until the estimate is within 0.20 m and 0.35 rad of ground
+truth and stays there for 5 s. Convergence time is the same measure from
+the start of the run.
+
 ## Software
 
 - Webots R2025a
