@@ -234,9 +234,10 @@ class SafetyLayer:
         else:
             self.state = "clear"
 
-        # STUDENT TODO: replace this bounded safety recovery with the obstacle
-        # avoidance method taught in class, and request replanning when the
-        # current global path remains blocked.  The starter intentionally
+        # Provided starter behaviour, kept unchanged for the ``baseline``
+        # method.  The team system replaces it with ``ReactiveAvoider`` below,
+        # which reports persistent blockages to the A* planner for replanning
+        # (see ``MissionController`` in mission.py).  The starter intentionally
         # enters ``blocked`` instead of pretending that repeated local turns
         # have solved a global path obstruction.
         return linear_speed, angular_speed, minimum_front

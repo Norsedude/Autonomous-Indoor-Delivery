@@ -37,6 +37,73 @@ def row_at_or_after(rows: list[dict], target_time: float) -> dict:
     return rows[-1]
 
 
+def recovery_metrics(
+    rows: list[dict],
+    jump_threshold_m: float = 0.25,
+    position_tolerance_m: float = 0.20,
+    heading_tolerance_rad: float = 0.35,
+    hold_s: float = 5.0,
+    ignore_before_s: float = 2.0,
+) -> dict:
+    """Localization convergence and recovery after a pose disturbance.
+
+    A disturbance (kidnap) is a ground-truth jump larger than
+    ``jump_threshold_m`` between two consecutive log rows: the robot cannot
+    drive that far in one sample (about 1.5 mm at 0.09 m/s), so the jump comes
+    only from the Supervisor relocating it.  Recovery time is the time from
+    the jump until the estimate is within ``position_tolerance_m`` and
+    ``heading_tolerance_rad`` of ground truth and stays there for ``hold_s``.
+    ``localization_converge_time_s`` measures the same thing from the start
+    of the run (global localization in the uncertain-start scenario).
+    Jumps in the first ``ignore_before_s`` are the uncertain-start placement
+    made before the robot moves, not a disturbance.
+    """
+
+    def settle_time(start_index: int) -> float | None:
+        start_time = as_float(rows[start_index], "time_s") or 0.0
+        candidate: float | None = None
+        for row in rows[start_index:]:
+            time_s = as_float(row, "time_s")
+            position_error = as_float(row, "position_error_m")
+            heading_error = as_float(row, "heading_error_rad")
+            if time_s is None or position_error is None or heading_error is None:
+                continue
+            inside = position_error <= position_tolerance_m and abs(heading_error) <= heading_tolerance_rad
+            if not inside:
+                candidate = None
+                continue
+            if candidate is None:
+                candidate = time_s
+            if time_s - candidate >= hold_s:
+                return candidate - start_time
+        return None
+
+    disturbance_indices: list[int] = []
+    for index in range(1, len(rows)):
+        x0, y0 = as_float(rows[index - 1], "gt_x_m"), as_float(rows[index - 1], "gt_y_m")
+        x1, y1 = as_float(rows[index], "gt_x_m"), as_float(rows[index], "gt_y_m")
+        if None in (x0, y0, x1, y1):
+            continue
+        if (as_float(rows[index], "time_s") or 0.0) < ignore_before_s:
+            continue
+        if math.hypot(x1 - x0, y1 - y0) > jump_threshold_m:
+            disturbance_indices.append(index)
+
+    metrics: dict = {
+        "localization_converge_time_s": settle_time(0) if rows else None,
+        "pose_disturbances": len(disturbance_indices),
+        "disturbance_time_s": None,
+        "recovery_time_s": None,
+        "recovered": None,
+    }
+    if disturbance_indices:
+        first = disturbance_indices[0]
+        metrics["disturbance_time_s"] = as_float(rows[first], "time_s")
+        metrics["recovery_time_s"] = settle_time(first)
+        metrics["recovered"] = metrics["recovery_time_s"] is not None
+    return metrics
+
+
 def evaluate(
     rows: list[dict],
     minimum_duration_s: float = 45.0,
@@ -207,6 +274,7 @@ def evaluate(
         "position_rmse_m": position_rmse,
         "position_max_error_m": maximum_position_error,
         "full_mission_required": require_complete,
+        **recovery_metrics(rows),
     }
     return not issues, issues, metrics
 

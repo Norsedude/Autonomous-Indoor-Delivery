@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import platform
 import shutil
 import subprocess
 import sys
@@ -131,7 +132,7 @@ def run_one(
                 process.kill()
             process.wait()
     new_logs = sorted(set(RESULTS.glob("run_*.csv")) - before, key=lambda path: path.stat().st_mtime)
-    record = {"method": method, "scenario": scenario, "degradation": degradation, "seed": seed, "webots_exit": exit_code, "wall_clock_s": round(time.time() - start, 1)}
+    record = {"method": method, "scenario": scenario, "degradation": degradation, "seed": seed, "platform": platform.system(), "webots_exit": exit_code, "wall_clock_s": round(time.time() - start, 1)}
     if not new_logs:
         record["error"] = "no evaluation CSV was written"
         return record

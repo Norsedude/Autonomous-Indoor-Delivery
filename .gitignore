@@ -5,6 +5,5 @@ __pycache__/
 results/offline_sim/**/*.csv
 worlds/_batch.wbt
 worlds/._batch.*
-results/webots/**/*.csv
 results/webots/**/*_console.txt
 results/run_*.csv

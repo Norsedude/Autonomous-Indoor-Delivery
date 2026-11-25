@@ -21,6 +21,7 @@ from occupancy_grid import OccupancyGrid  # noqa: E402
 from odometry import DifferentialDriveOdometry, Pose2D, wrap_angle  # noqa: E402
 from navigation import SafetyLayer, WaypointFollower, unicycle_to_wheels  # noqa: E402
 from check_run_health import evaluate as evaluate_run_health  # noqa: E402
+from check_run_health import recovery_metrics  # noqa: E402
 from simulate_baseline import run_simulation  # noqa: E402
 
 
@@ -269,6 +270,38 @@ class RunHealthTests(unittest.TestCase):
         passed, issues, _ = evaluate_run_health(rows, require_complete=True)
         self.assertFalse(passed)
         self.assertTrue(any("never reported mission completion" in issue for issue in issues))
+
+
+class RecoveryMetricTests(unittest.TestCase):
+    @staticmethod
+    def rows(kidnap_at: float, recover_at: float | None, end: float = 60.0) -> list[dict]:
+        rows = []
+        for step in range(int(end / 0.064)):
+            t = step * 0.064
+            kidnapped = t >= kidnap_at
+            gt_x = 0.9 if kidnapped else -1.0 + 0.001 * step
+            error = 0.03 if (not kidnapped or (recover_at is not None and t >= recover_at)) else 2.5
+            rows.append({"time_s": f"{t:.3f}", "gt_x_m": f"{gt_x:.4f}", "gt_y_m": "0.0",
+                         "position_error_m": f"{error}", "heading_error_rad": "0.01"})
+        return rows
+
+    def test_recovery_time_after_kidnap(self) -> None:
+        metrics = recovery_metrics(self.rows(kidnap_at=20.0, recover_at=32.0))
+        self.assertEqual(metrics["pose_disturbances"], 1)
+        self.assertAlmostEqual(metrics["disturbance_time_s"], 20.0, delta=0.1)
+        self.assertTrue(metrics["recovered"])
+        self.assertAlmostEqual(metrics["recovery_time_s"], 12.0, delta=0.15)
+        self.assertAlmostEqual(metrics["localization_converge_time_s"], 0.0, delta=0.01)
+
+    def test_unrecovered_kidnap_is_reported(self) -> None:
+        metrics = recovery_metrics(self.rows(kidnap_at=20.0, recover_at=None))
+        self.assertFalse(metrics["recovered"])
+        self.assertIsNone(metrics["recovery_time_s"])
+
+    def test_start_placement_is_not_a_disturbance(self) -> None:
+        metrics = recovery_metrics(self.rows(kidnap_at=0.5, recover_at=8.0))
+        self.assertEqual(metrics["pose_disturbances"], 0)
+        self.assertAlmostEqual(metrics["localization_converge_time_s"], 8.0, delta=0.15)
 
 
 class WorldStructureTests(unittest.TestCase):
