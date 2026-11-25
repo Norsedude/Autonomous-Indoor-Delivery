@@ -7,3 +7,4 @@ worlds/_batch.wbt
 worlds/._batch.*
 results/webots/**/*_console.txt
 results/run_*.csv
+~$*

@@ -8,6 +8,7 @@ avoidance, and replanning) is implemented on top of the provided starter. See
 symmetry finding. The provided baseline is still available for the required
 comparison. The degraded-sensor extension (`sensing.py`, method `team_robust`) and all
 Webots results are summarized in `results/webots/summary.md`.
+To record the demonstration video, follow [docs/demo_video.md](docs/demo_video.md).
 
 ## Windows setup (team machines)
 

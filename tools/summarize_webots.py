@@ -20,7 +20,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNS = PROJECT_ROOT / "results" / "webots" / "runs.jsonl"
 OUTPUT = PROJECT_ROOT / "results" / "webots" / "summary.md"
-SCENARIOS = ["nominal", "uncertain_start", "blocked_route", "kidnapped", "blocked_corridor"]
+SCENARIOS = ["nominal", "uncertain_start", "blocked_route", "kidnapped", "blocker_position_3", "blocked_corridor"]
 METHODS = ["baseline", "team", "team_robust"]
 DEGRADATIONS = ["none", "moderate", "severe"]
 

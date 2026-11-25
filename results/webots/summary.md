@@ -17,6 +17,12 @@ Converge = time from the start until the estimate is within 0.20 m / 0.35 rad of
 | team_robust | blocked_route | none | 5/5 | 4.0 ± 0.0 | 359 ± 1 | 24.6 ± 0.0 | 0 | 0.030 ± 0.005 | 0.011 ± 0.002 | 0.07 ± 0.00 | 0.2 ± 0.1 | - | - |
 | baseline | kidnapped | none | 0/5 | 1.0 ± 0.0 | - | 14.4 ± 0.0 | 0 | 2.526 ± 0.000 | 2.444 ± 0.000 | 3.36 ± 0.00 | 0.0 ± 0.0 | 0/5 | - |
 | team | kidnapped | none | 2/5 | 2.2 ± 1.6 | 493 ± 3 | 33.1 ± 2.6 | 0 | 2.680 ± 1.206 | 1.950 ± 0.814 | 4.65 ± 4.18 | 0.2 ± 0.1 | 2/5 | 56.8 ± 0.6 |
+| baseline | blocker_position_3 | none | 0/5 | 2.0 ± 0.0 | - | 20.7 ± 0.0 | 0 | 0.133 ± 0.000 | 0.012 ± 0.000 | 5.22 ± 0.00 | 0.0 ± 0.0 | - | - |
+| team | blocker_position_3 | none | 5/5 | 4.0 ± 0.0 | 359 ± 1 | 24.6 ± 0.0 | 0 | 0.031 ± 0.005 | 0.011 ± 0.002 | 0.06 ± 0.00 | 0.2 ± 0.1 | - | - |
+| team_robust | blocker_position_3 | none | 5/5 | 4.0 ± 0.0 | 359 ± 2 | 24.6 ± 0.0 | 0 | 0.030 ± 0.005 | 0.011 ± 0.002 | 0.06 ± 0.00 | 0.2 ± 0.1 | - | - |
+| baseline | blocked_corridor | none | 0/5 | 0.0 ± 0.0 | - | 3.2 ± 0.0 | 0 | 0.024 ± 0.000 | 0.011 ± 0.000 | 2.39 ± 0.00 | 0.0 ± 0.0 | - | - |
+| team | blocked_corridor | none | 5/5 | 4.0 ± 0.0 | 363 ± 3 | 25.1 ± 0.1 | 0 | 0.031 ± 0.005 | 0.010 ± 0.002 | 0.06 ± 0.00 | 0.2 ± 0.1 | - | - |
+| team_robust | blocked_corridor | none | 5/5 | 4.0 ± 0.0 | 364 ± 3 | 25.1 ± 0.0 | 0 | 0.031 ± 0.005 | 0.010 ± 0.002 | 0.06 ± 0.00 | 0.2 ± 0.1 | - | - |
 | team | nominal | moderate | 5/5 | 4.0 ± 0.0 | 418 ± 82 | 25.0 ± 0.7 | 0 | 0.033 ± 0.008 | 0.011 ± 0.002 | 0.06 ± 0.00 | 0.3 ± 0.2 | - | - |
 | team_robust | nominal | moderate | 5/5 | 4.0 ± 0.0 | 369 ± 15 | 24.6 ± 0.1 | 0 | 0.032 ± 0.007 | 0.010 ± 0.002 | 0.06 ± 0.00 | 0.3 ± 0.2 | - | - |
 | team | blocked_route | moderate | 5/5 | 4.0 ± 0.0 | 379 ± 12 | 24.8 ± 0.1 | 0 | 0.035 ± 0.006 | 0.010 ± 0.002 | 0.06 ± 0.00 | 0.3 ± 0.2 | - | - |
@@ -80,6 +86,36 @@ Converge = time from the start until the estimate is within 0.20 m / 0.35 rad of
 | team | kidnapped | none | 3 | no | 1 | 443 | 0 | 3.560 | ground truth recorded 1/4 ordered goals; final HOME error is 7.705 m; limit is 0.200 m |
 | team | kidnapped | none | 4 | yes | 4 | 490 | 0 | 1.360 |  |
 | team | kidnapped | none | 5 | no | 1 | 442 | 0 | 3.563 | ground truth recorded 1/4 ordered goals; final HOME error is 7.706 m; limit is 0.200 m |
+| baseline | blocker_position_3 | none | 1 | no | 2 | 900 | 0 | 0.133 | average ground-truth speed is 0.0230 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 37.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 14; expected at least 23; ground truth recorded 2/4 ordered goals; final HOME error is 5.219 m; limit is 0.200 m |
+| baseline | blocker_position_3 | none | 2 | no | 2 | 900 | 0 | 0.133 | average ground-truth speed is 0.0230 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 37.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 14; expected at least 23; ground truth recorded 2/4 ordered goals; final HOME error is 5.219 m; limit is 0.200 m |
+| baseline | blocker_position_3 | none | 3 | no | 2 | 900 | 0 | 0.133 | average ground-truth speed is 0.0230 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 37.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 14; expected at least 23; ground truth recorded 2/4 ordered goals; final HOME error is 5.219 m; limit is 0.200 m |
+| baseline | blocker_position_3 | none | 4 | no | 2 | 900 | 0 | 0.133 | average ground-truth speed is 0.0230 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 37.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 14; expected at least 23; ground truth recorded 2/4 ordered goals; final HOME error is 5.219 m; limit is 0.200 m |
+| baseline | blocker_position_3 | none | 5 | no | 2 | 900 | 0 | 0.133 | average ground-truth speed is 0.0230 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 37.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 14; expected at least 23; ground truth recorded 2/4 ordered goals; final HOME error is 5.219 m; limit is 0.200 m |
+| team | blocker_position_3 | none | 1 | yes | 4 | 358 | 0 | 0.031 |  |
+| team | blocker_position_3 | none | 2 | yes | 4 | 361 | 0 | 0.038 |  |
+| team | blocker_position_3 | none | 3 | yes | 4 | 358 | 0 | 0.031 |  |
+| team | blocker_position_3 | none | 4 | yes | 4 | 359 | 0 | 0.025 |  |
+| team | blocker_position_3 | none | 5 | yes | 4 | 358 | 0 | 0.029 |  |
+| team_robust | blocker_position_3 | none | 1 | yes | 4 | 358 | 0 | 0.031 |  |
+| team_robust | blocker_position_3 | none | 2 | yes | 4 | 362 | 0 | 0.037 |  |
+| team_robust | blocker_position_3 | none | 3 | yes | 4 | 358 | 0 | 0.030 |  |
+| team_robust | blocker_position_3 | none | 4 | yes | 4 | 358 | 0 | 0.023 |  |
+| team_robust | blocker_position_3 | none | 5 | yes | 4 | 358 | 0 | 0.030 |  |
+| baseline | blocked_corridor | none | 1 | no | 0 | 900 | 0 | 0.024 | average ground-truth speed is 0.0036 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 6.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 2; expected at least 23; ground truth recorded 0/4 ordered goals; final HOME error is 2.392 m; limit is 0.200 m |
+| baseline | blocked_corridor | none | 2 | no | 0 | 900 | 0 | 0.024 | average ground-truth speed is 0.0036 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 6.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 2; expected at least 23; ground truth recorded 0/4 ordered goals; final HOME error is 2.392 m; limit is 0.200 m |
+| baseline | blocked_corridor | none | 3 | no | 0 | 900 | 0 | 0.024 | average ground-truth speed is 0.0036 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 6.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 2; expected at least 23; ground truth recorded 0/4 ordered goals; final HOME error is 2.392 m; limit is 0.200 m |
+| baseline | blocked_corridor | none | 4 | no | 0 | 900 | 0 | 0.024 | average ground-truth speed is 0.0036 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 6.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 2; expected at least 23; ground truth recorded 0/4 ordered goals; final HOME error is 2.392 m; limit is 0.200 m |
+| baseline | blocked_corridor | none | 5 | no | 0 | 900 | 0 | 0.024 | average ground-truth speed is 0.0036 m/s; expected visible progress; ground-truth path increased only 0.000 m during the final 20.0 s; the controller has stalled; nonzero wheel commands appear in only 6.9% of command samples; the controller never reported mission completion; the route did not finish: maximum active_waypoint is 2; expected at least 23; ground truth recorded 0/4 ordered goals; final HOME error is 2.392 m; limit is 0.200 m |
+| team | blocked_corridor | none | 1 | yes | 4 | 360 | 0 | 0.030 |  |
+| team | blocked_corridor | none | 2 | yes | 4 | 366 | 0 | 0.038 |  |
+| team | blocked_corridor | none | 3 | yes | 4 | 362 | 0 | 0.033 |  |
+| team | blocked_corridor | none | 4 | yes | 4 | 365 | 0 | 0.023 |  |
+| team | blocked_corridor | none | 5 | yes | 4 | 365 | 0 | 0.030 |  |
+| team_robust | blocked_corridor | none | 1 | yes | 4 | 364 | 0 | 0.030 |  |
+| team_robust | blocked_corridor | none | 2 | yes | 4 | 367 | 0 | 0.038 |  |
+| team_robust | blocked_corridor | none | 3 | yes | 4 | 362 | 0 | 0.033 |  |
+| team_robust | blocked_corridor | none | 4 | yes | 4 | 366 | 0 | 0.023 |  |
+| team_robust | blocked_corridor | none | 5 | yes | 4 | 359 | 0 | 0.031 |  |
 | team | nominal | moderate | 1 | yes | 4 | 383 | 0 | 0.034 |  |
 | team | nominal | moderate | 2 | yes | 4 | 373 | 0 | 0.045 |  |
 | team | nominal | moderate | 3 | yes | 4 | 384 | 0 | 0.031 |  |

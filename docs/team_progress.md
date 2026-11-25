@@ -1,6 +1,6 @@
 # Group 5 (Tron): implementation notes and progress
 
-Team: Mateo Ortega, Zihao He, Devin Roberson. Status as of 20 November 2026.
+Team: Mateo Ortega, Zihao He, Devin Roberson. Status as of 25 November 2026.
 
 ## Where the project stands against our proposal schedule
 
@@ -11,7 +11,7 @@ Team: Mateo Ortega, Zihao He, Devin Roberson. Status as of 20 November 2026.
 | Nov 8 | Particle belief and LiDAR measurement update (Checkpoint 2) | Done: `localization.py`. |
 | Nov 15 | Planned path, path following, avoidance, replanning (Checkpoint 3) | Done: `planning.py`, `navigation.py`, `mission.py`. Verified in Webots (40 runs). |
 | Nov 22 | Robustness extension, data sets, analysis | Done: `sensing.py`, 50 Webots runs, `results/webots/summary.md`. |
-| Nov 29 | Report and slides | Not started. |
+| Nov 29 | Report and slides | In progress. Figures in `results/webots/figures/`; demo video steps in `docs/demo_video.md`. |
 
 ## Code map
 
@@ -95,6 +95,19 @@ Produced by `python tools/run_webots_batch.py --method baseline --method team --
 No collisions in any of the 40 runs. Baseline runs are identical across seeds because Webots physics and the baseline are deterministic.
 
 **Checkpoint 1 note.** The untouched baseline completes all 23 waypoints and returns within 0.13 m of HOME. Its odometry error grows to about 0.17 m, so the ground truth passes 0.23 m from C (tolerance 0.20 m), and `check_run_health.py --require-complete` reports FAIL: "ground truth recorded 2/4 ordered goals". See `results/webots/baseline/nominal/seed1_plots.png`. This is the drift the assignment asks us to explain; confirm with the instructor whether a near-miss baseline is acceptable for Checkpoint 1.
+
+## Untested blocker placements (25 Nov 2026, Webots, 5 seeds each)
+
+The final demonstration may use an unreleased obstacle placement, so we ran two placements that no earlier experiment used. No code or parameter was changed for them.
+
+| Scenario | Placement | Baseline | Team | Team robust |
+|---|---|---|---|---|
+| `blocker_position_3` | Supervisor test position 3, (2.0, -1.3), on the B -> C leg, moved at 20 s | 0/5 (2 goals, then stalls) | 5/5, 359 s, 0 collisions | 5/5, 359 s, 0 collisions |
+| `blocked_corridor` | (-2.3, 0.0), directly on the team's HOME -> A path, moved at 15 s | 0/5 (0 goals) | 5/5, 363 s, 0 collisions | 5/5, 364 s, 0 collisions |
+
+Evidence that the robot actually avoided the obstacle (seed 1, closest approach of the robot to the blocker centre): the nominal team path passes 0.13 m from the corridor spot and 0.26 m from position 3; with the blocker there, the robot detected it from LiDAR, replanned, and kept 0.39 m and 0.53 m. Figure: `results/webots/figures/success_unseen_placements.png`.
+
+Rerun: `python tools/run_webots_batch.py --method baseline --method team --method team_robust --scenario blocker_position_3 --scenario blocked_corridor --seeds 1 2 3 4 5`.
 
 ## Offline results so far
 

@@ -138,9 +138,33 @@
         ]
       }
     },
+    "blocker_position_3": {
+      "description": "Untested placement: blocker moves from position 1 to test position 3 (2.0, -1.3) on the B->C leg, after the robot has planned and left HOME",
+      "webots_instructions": "Start the run, then press 3 with the 3D view focused about 20 s after the robot leaves HOME.",
+      "config": {
+        "localization": {
+          "initial_belief": "gaussian"
+        }
+      },
+      "simulation": {
+        "blocker": [
+          0.0,
+          0.0
+        ],
+        "blocker_events": [
+          [
+            20.0,
+            [
+              2.0,
+              -1.3
+            ]
+          ]
+        ]
+      }
+    },
     "blocked_corridor": {
-      "description": "Extra stress test (not a released placement): blocker moves onto the team's planned HOME->A path",
-      "webots_instructions": "Not reproducible with the Supervisor keys; offline simulation only.",
+      "description": "Untested placement (stress test): blocker moves onto the team's planned HOME->A path at (-2.3, 0.0)",
+      "webots_instructions": "No Supervisor key reaches this spot: use tools/run_webots_batch.py --scenario blocked_corridor (the scripted driver moves the blocker at 15 s), or drag the red block to (-2.3, 0.0) in Webots about 15 s into the run.",
       "config": {
         "localization": {
           "initial_belief": "gaussian"
@@ -198,5 +222,9 @@
   "extension_scenarios": [
     "nominal",
     "blocked_route"
+  ],
+  "unseen_placement_scenarios": [
+    "blocker_position_3",
+    "blocked_corridor"
   ]
 }

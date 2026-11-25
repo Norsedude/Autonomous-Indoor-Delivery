@@ -5,6 +5,7 @@ Reads ``results/webots/runs.jsonl`` and the per-run CSVs and writes PNGs to
 ``results/webots/figures/``:
 
 * ``success_by_scenario.png``   - mission success, baseline vs team (vs team_robust)
+* ``success_unseen_placements.png`` - same, for the two untested blocker placements
 * ``rmse_by_scenario.png``      - position RMSE per trial (log scale)
 * ``kidnap_recovery.png``       - estimate error vs time around the kidnap
 * ``uncertain_start_convergence.png`` - estimate error during global localization
@@ -82,27 +83,35 @@ def group(latest, method, scenario, degradation="none") -> list[dict]:
     return [r for (m, s, d, _), r in sorted(latest.items()) if (m, s, d) == (method, scenario, degradation)]
 
 
-def bar_success(latest) -> None:
-    fig, ax = plt.subplots(figsize=(8, 3.6))
-    methods = [m for m in METHODS if any(group(latest, m, s) for s in SCENARIOS)]
+def bar_success(latest, scenarios=SCENARIOS, labels=SCENARIO_LABELS,
+                filename="success_by_scenario.png",
+                title="Mission success in Webots (5 seeds per bar)") -> None:
+    methods = [m for m in METHODS if any(group(latest, m, s) for s in scenarios)]
+    if not methods:
+        return
+    fig, ax = plt.subplots(figsize=(max(7.0, 2.0 * len(scenarios)), 3.6))
     width = 0.8 / len(methods)
+    labelled: set[str] = set()
     for i, method in enumerate(methods):
-        for j, scenario in enumerate(SCENARIOS):
+        for j, scenario in enumerate(scenarios):
             g = group(latest, method, scenario)
             if not g:
                 continue
             ok = sum(mission_success(r) for r in g)
             x = j + (i - (len(methods) - 1) / 2) * width
-            ax.bar(x, ok / len(g) * 100, width - 0.04, color=COLORS[method], label=METHOD_LABELS[method] if j == 0 else None)
+            label = METHOD_LABELS[method] if method not in labelled else None
+            labelled.add(method)
+            ax.bar(x, ok / len(g) * 100, width - 0.04, color=COLORS[method], label=label)
             ax.text(x, ok / len(g) * 100 + 2, f"{ok}/{len(g)}", ha="center", va="bottom", fontsize=8, color=TEXT)
-    ax.set_xticks(range(len(SCENARIOS)), SCENARIO_LABELS)
+    ax.set_xticks(range(len(scenarios)), labels)
     ax.set_ylim(0, 115)
     ax.set_ylabel("Mission success (%)")
-    ax.set_title("Mission success in Webots (5 seeds per bar)", loc="left", color=TEXT)
+    ax.set_title(title, loc="left", color=TEXT)
     style(ax)
-    ax.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
+    legend_y = -0.22 if any("\n" in label for label in labels) else -0.12
+    ax.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, legend_y), ncol=3)
     fig.tight_layout()
-    fig.savefig(FIGURES / "success_by_scenario.png", dpi=200)
+    fig.savefig(FIGURES / filename, dpi=200)
     plt.close(fig)
 
 
@@ -213,6 +222,13 @@ def main() -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
     latest = load_latest()
     bar_success(latest)
+    bar_success(
+        latest,
+        scenarios=["blocker_position_3", "blocked_corridor"],
+        labels=["Blocker position 3\n(B -> C leg)", "Blocked corridor\n(HOME -> A path)"],
+        filename="success_unseen_placements.png",
+        title="Untested blocker placements (5 seeds per bar)",
+    )
     strip_rmse(latest)
     error_traces(latest, "kidnapped", "kidnap_recovery.png", "Kidnapped robot: estimate error", True)
     error_traces(latest, "uncertain_start", "uncertain_start_convergence.png", "Uncertain start: global localization", False)
