@@ -62,9 +62,11 @@ and each run's metrics are appended to `results/webots/runs.jsonl` (the
 latest record per combination is used).
 
 ```bash
-# 1. Run the experiments headless (about 1.5-5 min of wall time per run)
-python tools/run_webots_batch.py --method baseline --method team --method team_robust --all-scenarios --seeds 1 2 3 4 5
+# 1. Run the experiments headless (about 30-60 s of wall time per run; 120 runs in total)
+python tools/run_webots_batch.py --method baseline --method team --all-scenarios --seeds 1 2 3 4 5
+python tools/run_webots_batch.py --method team_robust --scenario nominal --scenario blocked_route --seeds 1 2 3 4 5
 python tools/run_webots_batch.py --method team --method team_robust --scenario nominal --scenario blocked_route --degradation moderate --degradation severe --seeds 1 2 3 4 5
+python tools/run_webots_batch.py --method baseline --method team --method team_robust --scenario blocker_position_3 --scenario blocked_corridor --seeds 1 2 3 4 5
 # 2. Tables (success, time, path, collisions, RMSE, convergence and recovery time)
 python tools/summarize_webots.py
 # 3. Report figures -> results/webots/figures/ (needs matplotlib)
