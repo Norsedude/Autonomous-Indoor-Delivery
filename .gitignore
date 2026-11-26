@@ -8,3 +8,4 @@ worlds/._batch.*
 results/webots/**/*_console.txt
 results/run_*.csv
 ~$*
+demos/Test 1 Normal Speed.mp4
